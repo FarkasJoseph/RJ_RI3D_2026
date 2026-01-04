@@ -15,38 +15,38 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkBase.ControlType;
 
-public class ArmSubsystem extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
     
-    private SparkMax arm;
+    private SparkMax shooter;
     private RelativeEncoder relativeEncoder;
     private SparkClosedLoopController pidController;
     private SparkMaxConfig config = new SparkMaxConfig();
 
-    public ArmSubsystem() {
-        arm = new SparkMax(0, MotorType.kBrushless);
+    public ShooterSubsystem() {
+        shooter = new SparkMax(0, MotorType.kBrushless);
 
         config.inverted(false).idleMode(IdleMode.kBrake).smartCurrentLimit(40);
     
-        relativeEncoder = arm.getEncoder();
+        relativeEncoder = shooter.getEncoder();
         
-        pidController = arm.getClosedLoopController();
+        pidController = shooter.getClosedLoopController();
         
         config.closedLoop.p(.03).i(0).d(0);
         
-        pidController.setReference(0, ControlType.kPosition);
+        pidController.setReference(0, ControlType.kVelocity);
     }
 
     public void setPower(double power) {
-        arm.set(power);
+        shooter.set(power);
     }
 
-    public void setPosition(double position) {
-        pidController.setReference(position, ControlType.kPosition);
+    public void setVelocity(double velocity) {
+        pidController.setReference(velocity, ControlType.kVelocity);
     }
 
     public Command getSetPowerCommand(double power) {
         return this.startEnd(() -> {
-            arm.set(power);
+            shooter.set(power);
         }, () -> {
             setPower(0);
         });
@@ -54,24 +54,22 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command getSetPowerCommand(DoubleSupplier powSupplier) {
         return this.runEnd(() -> {
-            arm.set(powSupplier.getAsDouble());
+            shooter.set(powSupplier.getAsDouble());
         }, () -> {
             setPower(0);
         });
     }
 
-    public Command getSetPositionCommand(double position) {
+    public Command getSetVelocityCommand(double velocity) {
         return this.runOnce(() -> {
-            this.setPosition(
-                position
+            this.setVelocity(
+                velocity
             );
         });
     }
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Arm Position", relativeEncoder.getPosition());
+        SmartDashboard.putNumber("Shooter Velocity", relativeEncoder.getVelocity());
     }
-
-
 }
